@@ -98,3 +98,11 @@ Vercel settings:
 - Node.js: 22.x
 
 `vercel.json` serves generated route documents first and falls back to the React app for unmatched client routes.
+
+## Website and demo management
+
+- **Live Website:** [https://wedding.mspixelpulse.com](https://wedding.mspixelpulse.com)
+- **MSPixelPulse Projects:** [MSPixelPulse Projects](https://mspixelpulse.com/projects)
+- **Aurelion Demo Library:** [Private Demo Management — Owner Access Required](https://mahakpatel.com/play/ai?view=demo-library)
+
+Category subdomains are not published here until their HTTPS website is verified. The Aurelion link is an owner-only management interface and does not grant access.
