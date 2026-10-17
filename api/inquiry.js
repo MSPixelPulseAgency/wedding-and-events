@@ -1,3 +1,4 @@
+import { forwardToAurelion } from './_aurelion.js'
 const attempts = new Map()
 const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'preferredContact', 'eventType', 'eventDate', 'dateFlexibility', 'location', 'guestCount', 'service', 'budget', 'referral', 'vision']
 const clean = (value, max = 2000) => String(value ?? '').trim().slice(0, max)
@@ -31,7 +32,15 @@ export default async function handler(request, response) {
   if (!data.firstName || !data.lastName || !/^\S+@\S+\.\S+$/.test(data.email) || !data.eventType || !data.location || !data.service || data.vision.length < 20 || body.consent !== true) {
     return response.status(400).json({ message: 'Please complete the required fields and confirm consent.' })
   }
-  if (!process.env.RESEND_API_KEY) return response.status(503).json({ code: 'EMAIL_NOT_CONFIGURED', message: 'Secure email delivery is not configured yet. Please use the prepared-email option below.' })
+  // Primary path: the central MSPixelPulse inquiry pipeline (saved first, then the owner is emailed). Resend stays an
+  // optional extra copy when it is configured; it is never required.
+  const forwarded = await forwardToAurelion(request, {
+    formType: 'consultation', clientId: clean(body.clientId, 80), name: `${data.firstName} ${data.lastName}`, email: data.email, phone: data.phone, service: data.service,
+    message: data.vision, pageUrl: clean(body.pageUrl, 2000),
+    details: { 'Event type': data.eventType, 'Event date': data.eventDate, 'Date flexibility': data.dateFlexibility, Location: data.location, 'Guest count': data.guestCount, Budget: data.budget, Referral: data.referral, 'Preferred contact': data.preferredContact },
+  })
+  if (!forwarded.ok) return response.status(forwarded.status).json({ code: 'INQUIRY_NOT_ACCEPTED', message: forwarded.error + ' You can also use the prepared-email option below.' })
+  if (!process.env.RESEND_API_KEY) return response.status(200).json({ ok: true, message: 'Your inquiry was received by MSPixelPulse. This is a demo website: no event, date or booking is reserved.', inquiryId: forwarded.inquiryId })
 
   const rows = allowedFields.map((field) => `<tr><th style="padding:8px;text-align:left;vertical-align:top">${escapeHtml(field)}</th><td style="padding:8px">${escapeHtml(data[field] || 'Not provided')}</td></tr>`).join('')
   const resendResponse = await fetch('https://api.resend.com/emails', {
@@ -47,7 +56,7 @@ export default async function handler(request, response) {
   })
   if (!resendResponse.ok) {
     console.error('Resend inquiry error', resendResponse.status, await resendResponse.text())
-    return response.status(502).json({ message: 'The email service could not accept this inquiry. Please use the prepared-email option below.' })
+    return response.status(200).json({ ok: true, message: 'Your inquiry was received by MSPixelPulse (the extra email copy failed). This is a demo website: nothing is reserved.', inquiryId: forwarded.inquiryId })
   }
-  return response.status(200).json({ ok: true, message: 'Your inquiry was sent securely.' })
+  return response.status(200).json({ ok: true, message: 'Your inquiry was received by MSPixelPulse. This is a demo website: no event, date or booking is reserved.', inquiryId: forwarded.inquiryId })
 }
