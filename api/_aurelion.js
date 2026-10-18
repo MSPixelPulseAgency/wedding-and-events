@@ -3,7 +3,7 @@
 // console's allowlist accepts it. This is a DEMO site: nothing here books, orders or charges anything.
 const SITE_ID = 'wedding-and-events'
 const ENDPOINT = 'https://mahakpatel.com/play/ai/api/intake/site/' + SITE_ID
-const PUBLIC_HOSTS = ['wedding.mspixelpulse.com', 'wedding-and-events.vercel.app', 'wedding-and-events.vercel.app', 'mspixelpulse-demo-home-care.vercel.app']
+const PUBLIC_HOSTS = ['wedding.mspixelpulse.com', 'wedding-and-events.vercel.app']
 const clean = (value, max = 300) => String(value ?? '').trim().slice(0, max)
 export function aurelionOrigin(request) {
   const host = clean(request.headers['x-forwarded-host'] || request.headers.host, 200).toLowerCase()

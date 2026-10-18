@@ -31,8 +31,8 @@ export default async function handler(request, response) {
     name: clean(body.name, 160), email: clean(body.email, 240), event_type: clean(body.eventType, 120),
     rating: Number(body.rating) || null, feedback: clean(body.feedback, 4000), public_permission: body.permission === true,
   }
-  if (!data.name || !/^\S+@\S+\.\S+$/.test(data.email) || data.feedback.length < 20 || (data.rating && (data.rating < 1 || data.rating > 5))) {
-    return response.status(400).json({ message: 'Please provide a valid name, email and at least 20 characters of feedback.' })
+  if (body.consent !== true || !data.name || !/^\S+@\S+\.\S+$/.test(data.email) || data.feedback.length < 20 || (data.rating && (data.rating < 1 || data.rating > 5))) {
+    return response.status(400).json({ message: 'Please confirm consent and provide a valid name, email and at least 20 characters of feedback.' })
   }
   // Private feedback goes to the central MSPixelPulse inquiry pipeline (stored privately, never published). Supabase and
   // Resend remain optional extras when configured.
