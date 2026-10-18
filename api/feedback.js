@@ -1,3 +1,4 @@
+import { forwardToAurelion } from './_aurelion.js'
 const attempts = new Map()
 const clean = (value, max = 2000) => String(value ?? '').trim().slice(0, max)
 const escapeHtml = (value) => clean(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;')
@@ -30,11 +31,15 @@ export default async function handler(request, response) {
     name: clean(body.name, 160), email: clean(body.email, 240), event_type: clean(body.eventType, 120),
     rating: Number(body.rating) || null, feedback: clean(body.feedback, 4000), public_permission: body.permission === true,
   }
-  if (!data.name || !/^\S+@\S+\.\S+$/.test(data.email) || data.feedback.length < 20 || (data.rating && (data.rating < 1 || data.rating > 5))) {
-    return response.status(400).json({ message: 'Please provide a valid name, email and at least 20 characters of feedback.' })
+  if (body.consent !== true || !data.name || !/^\S+@\S+\.\S+$/.test(data.email) || data.feedback.length < 20 || (data.rating && (data.rating < 1 || data.rating > 5))) {
+    return response.status(400).json({ message: 'Please confirm consent and provide a valid name, email and at least 20 characters of feedback.' })
   }
+  // Private feedback goes to the central MSPixelPulse inquiry pipeline (stored privately, never published). Supabase and
+  // Resend remain optional extras when configured.
+  const forwarded = await forwardToAurelion(request, { formType: 'feedback', clientId: clean(body.clientId, 80), name: data.name, email: data.email, message: data.feedback, details: { 'Event type': data.event_type, Rating: data.rating ? String(data.rating) : '', 'Public permission': data.public_permission ? 'yes' : 'no' } })
+  if (!forwarded.ok) return response.status(forwarded.status).json({ code: 'FEEDBACK_NOT_ACCEPTED', message: forwarded.error })
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY } = process.env
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) return response.status(503).json({ code: 'FEEDBACK_NOT_CONFIGURED', message: 'Secure feedback storage is not configured yet. Please try again later or contact the site owner.' })
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) return response.status(200).json({ ok: true, message: 'Thank you. Your feedback was received privately by MSPixelPulse and is not published.' })
 
   const storeResponse = await fetch(`${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/feedback`, {
     method: 'POST',

@@ -4,7 +4,7 @@ import { SEO } from '../components/common/SEO'
 import { PageHero } from '../components/common/PageHero'
 import { image } from '../data/siteData'
 
-const initial = { name: '', email: '', eventType: '', rating: '', feedback: '', permission: false, website: '' }
+const initial = { name: '', email: '', eventType: '', rating: '', feedback: '', permission: false, consent: false, website: '' }
 
 export default function Feedback() {
   const [data, setData] = useState(initial)
@@ -37,6 +37,7 @@ export default function Feedback() {
             <label>Event type<select name="eventType" value={data.eventType} onChange={update}><option value="">Choose one</option><option>Wedding</option><option>Corporate event</option><option>Social event</option><option>Other</option></select></label>
             <label>Experience rating<select name="rating" value={data.rating} onChange={update}><option value="">Choose one</option>{[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} of 5</option>)}</select></label>
             <label className="form-grid__wide">Feedback *<textarea required minLength="20" rows="7" name="feedback" value={data.feedback} onChange={update} placeholder="What felt clear, helpful, difficult or memorable?" /></label>
+            <label className="checkbox-label form-grid__wide"><input type="checkbox" required name="consent" checked={data.consent} onChange={update} /><span>I agree that MSPixelPulse may receive this demo feedback and contact me about it. Nothing is published automatically.</span></label>
             <label className="checkbox-label form-grid__wide"><input type="checkbox" name="permission" checked={data.permission} onChange={update} /><span>You may contact me about using an edited version publicly. I understand nothing will be published automatically.</span></label>
             <label className="honey-field" aria-hidden="true">Website<input name="website" tabIndex="-1" autoComplete="off" value={data.website} onChange={update} /></label>
           </div></fieldset>
